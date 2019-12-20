@@ -25,28 +25,24 @@ def jaccard_numpy(box_a, box_b):
 
 
 class Compose(object):
-    """Composes several augmentations together.
-    Args:
-        transforms (List[Transform]): list of transforms to compose.
-    """
-
     def __init__(self, transforms):
         self.transforms = transforms
 
     def __call__(self, img, masks=None, boxes=None, labels=None):
-        for t in self.transforms:
-            img, masks, boxes, labels = t(img, masks, boxes, labels)
+        for one_transform in self.transforms:
+            img, masks, boxes, labels = one_transform(img, masks, boxes, labels)
+
         return img, masks, boxes, labels
 
 
-class ConvertFromInts(object):
+class ImgToFloat(object):
     def __call__(self, image, masks=None, boxes=None, labels=None):
         return image.astype(np.float32), masks, boxes, labels
 
 
 class ToAbsoluteCoords(object):
     def __call__(self, image, masks=None, boxes=None, labels=None):
-        height, width, channels = image.shape
+        height, width, _ = image.shape
         boxes[:, 0] *= width
         boxes[:, 2] *= width
         boxes[:, 1] *= height
@@ -128,40 +124,26 @@ class Resize(object):
         return image, masks, boxes, labels
 
 
-class RandomSaturation(object):
-    def __init__(self, lower=0.5, upper=1.5):
+class RandomContrast(object):
+    def __init__(self, lower=0.7, upper=1.3):
         self.lower = lower
         self.upper = upper
         assert self.upper >= self.lower, "contrast upper must be >= lower."
         assert self.lower >= 0, "contrast lower must be non-negative."
 
     def __call__(self, image, masks=None, boxes=None, labels=None):
-        if random.randint(2):
-            image[:, :, 1] *= random.uniform(self.lower, self.upper)
-
+        alpha = random.uniform(self.lower, self.upper)
+        image *= alpha
         return image, masks, boxes, labels
 
 
-class RandomHue(object):
-    def __init__(self, delta=18.0):
-        assert 0.0 <= delta <= 360.0
+class RandomBrightness(object):
+    def __init__(self, delta=20.0):  # delta must between 0 ~ 255
         self.delta = delta
 
     def __call__(self, image, masks=None, boxes=None, labels=None):
-        if random.randint(2):
-            image[:, :, 0] += random.uniform(-self.delta, self.delta)
-            image[:, :, 0][image[:, :, 0] > 360.0] -= 360.0
-            image[:, :, 0][image[:, :, 0] < 0.0] += 360.0
-        return image, masks, boxes, labels
-
-
-class RandomLightingNoise(object):
-    def __init__(self):
-        self.perms = ((0, 1, 2), (0, 2, 1),
-                      (1, 0, 2), (1, 2, 0),
-                      (2, 0, 1), (2, 1, 0))
-
-    def __call__(self, image, masks=None, boxes=None, labels=None):
+        delta = random.uniform(-self.delta, self.delta)
+        image += delta
         return image, masks, boxes, labels
 
 
@@ -180,31 +162,27 @@ class ConvertColor(object):
         return image, masks, boxes, labels
 
 
-class RandomContrast(object):
-    def __init__(self, lower=0.5, upper=1.5):
+class RandomSaturation(object):
+    def __init__(self, lower=0.7, upper=1.3):
         self.lower = lower
         self.upper = upper
         assert self.upper >= self.lower, "contrast upper must be >= lower."
         assert self.lower >= 0, "contrast lower must be non-negative."
 
-    # expects float image
     def __call__(self, image, masks=None, boxes=None, labels=None):
-        if random.randint(2):
-            alpha = random.uniform(self.lower, self.upper)
-            image *= alpha
+        image[:, :, 1] *= random.uniform(self.lower, self.upper)
         return image, masks, boxes, labels
 
 
-class RandomBrightness(object):
-    def __init__(self, delta=32):
-        assert delta >= 0.0
-        assert delta <= 255.0
+class RandomHue(object):
+    def __init__(self, delta=12.0):
+        assert 0.0 <= delta <= 360.0
         self.delta = delta
 
     def __call__(self, image, masks=None, boxes=None, labels=None):
-        if random.randint(2):
-            delta = random.uniform(-self.delta, self.delta)
-            image += delta
+        image[:, :, 0] += random.uniform(-self.delta, self.delta)
+        image[:, :, 0][image[:, :, 0] > 360.0] -= 360.0
+        image[:, :, 0][image[:, :, 0] < 0.0] += 360.0
         return image, masks, boxes, labels
 
 
@@ -218,6 +196,7 @@ class ToTensor(object):
         return torch.from_numpy(cvimage.astype(np.float32)).permute(2, 0, 1), masks, boxes, labels
 
 
+# TODO: this seems not good, fix it later.
 class RandomSampleCrop(object):
     # Potentialy sample a random crop from the image and put it in a random place
     """Crop
@@ -341,7 +320,7 @@ class RandomSampleCrop(object):
                 # crop the current masks to the same dimensions as the image
                 current_masks = current_masks[:, rect[1]:rect[3], rect[0]:rect[2]]
 
-                return current_image, current_masks, current_boxes, current_labels
+                return current_image, current_masks, current_boxes, current_labels  # This
 
 
 class Expand(object):
@@ -354,12 +333,11 @@ class Expand(object):
             return image, masks, boxes, labels
 
         height, width, depth = image.shape
-        ratio = random.uniform(1, 4)
+        ratio = random.uniform(1, 1.8)
         left = random.uniform(0, width * ratio - width)
         top = random.uniform(0, height * ratio - height)
 
-        expand_image = np.zeros((int(height * ratio), int(width * ratio), depth), dtype=image.dtype)
-        expand_image[:, :, :] = MEANS
+        expand_image = np.random.rand(int(height * ratio), int(width * ratio), depth) * 255
         expand_image[int(top):int(top + height), int(left):int(left + width)] = image
         image = expand_image
 
@@ -387,56 +365,34 @@ class RandomMirror(object):
 
 
 class PhotometricDistort(object):
-    # Randomize hue, vibrance, etc.
     def __init__(self):
+        # RandomContrast() and RandomBrightness() do not influence the normalize result if they are behind of
+        # RandomSaturation() and RandomHue().
         self.pd = [RandomContrast(),
+                   RandomBrightness(),
                    ConvertColor(transform='HSV'),
                    RandomSaturation(),
                    RandomHue(),
-                   ConvertColor(current='HSV', transform='BGR'),
-                   RandomContrast()]
-
-        self.rand_brightness = RandomBrightness()
-        self.rand_light_noise = RandomLightingNoise()
+                   ConvertColor(current='HSV', transform='BGR')]
 
     def __call__(self, image, masks, boxes, labels):
-        im = image.copy()
-        im, masks, boxes, labels = self.rand_brightness(im, masks, boxes, labels)
         if random.randint(2):
-            distort = Compose(self.pd[:-1])
-        else:
-            distort = Compose(self.pd[1:])
-        im, masks, boxes, labels = distort(im, masks, boxes, labels)
-        return self.rand_light_noise(im, masks, boxes, labels)
+            distort = Compose(self.pd)
+            image, masks, boxes, labels = distort(image, masks, boxes, labels)
+        return image, masks, boxes, labels
 
 
-class BackboneTransform(object):
-    """
-    Transforms a BRG image made of floats in the range [0, 255] to whatever
-    input the current backbone network needs.
-    """
-
-    def __init__(self, in_channel_order):
-        self.mean = np.array(MEANS, dtype=np.float32)
-        self.std = np.array(STD, dtype=np.float32)
-        self.transform = cfg.backbone.transform
-
-        # Here I use "Algorithms and Coding" to convert string permutations to numbers
-        self.channel_map = {c: idx for idx, c in enumerate(in_channel_order)}
-        self.channel_permutation = [self.channel_map[c] for c in self.transform.channel_order]
+class Normalize(object):
+    def __init__(self):
+        pass
 
     def __call__(self, img, masks=None, boxes=None, labels=None):
-
         img = img.astype(np.float32)
+        # TODO: check if this right
+        for i in range(3):
+            img[:, :, i] = (img[:, :, i] - np.mean(img[:, :, i])) / (np.std(img[:, :, i]))
 
-        if self.transform.normalize:
-            img = (img - self.mean) / self.std
-        elif self.transform.subtract_means:
-            img = (img - self.mean)
-        elif self.transform.to_float:
-            img = img / 255
-
-        img = img[:, :, self.channel_permutation]
+        img = img[:, :, (2, 1, 0)]  # TO RGB
 
         return img.astype(np.float32), masks, boxes, labels
 
@@ -445,10 +401,10 @@ class BaseTransform(object):
     """ Transorm to be used when evaluating. """
 
     def __init__(self):
-        self.augment = Compose([ConvertFromInts(),
+        self.augment = Compose([ImgToFloat(),
                                 Resize(resize_gt=False),
                                 Pad(cfg.img_size, cfg.img_size, pad_gt=False),
-                                BackboneTransform('BGR')])
+                                Normalize()])
 
     def __call__(self, img, masks=None, boxes=None, labels=None):
         return self.augment(img, masks, boxes, labels)
@@ -494,16 +450,26 @@ class FastBaseTransform(torch.nn.Module):
 
 class SSDAugmentation(object):
     def __init__(self):
-        self.augment = Compose([ConvertFromInts(),
+        self.augment = Compose([ImgToFloat(),
+                                PhotometricDistort(),  # 50% possibility
                                 ToAbsoluteCoords(),
-                                PhotometricDistort(),
-                                Expand(),
                                 RandomSampleCrop(),
+                                Expand(),  # 50% possibility
                                 RandomMirror(),
                                 Resize(),
                                 Pad(cfg.img_size, cfg.img_size),
                                 ToPercentCoords(),
-                                BackboneTransform('BGR')])
+                                Normalize()])
 
     def __call__(self, img, masks, boxes, labels):
+        # aa = self.augment(img, masks, boxes, labels)
+        # img = aa[0].astype('uint8')
+        # bb = aa[2].astype('int').tolist()
+        #
+        # for one_bb in bb:
+        #     cv2.rectangle(img, (one_bb[0], one_bb[1]), (one_bb[2], one_bb[3]), (0, 255, 0), 1)
+        #
+        # cv2.imshow('aa', img)
+        # cv2.waitKey()
+
         return self.augment(img, masks, boxes, labels)

@@ -13,35 +13,26 @@ if not os.path.exists('weights/'):
 if not os.path.exists('tensorboard_log/'):
     os.mkdir('tensorboard_log/')
 
-COLORS = ((244, 67, 54), (233, 30, 99), (156, 39, 176), (103, 58, 183),
-          (63, 81, 181), (33, 150, 243), (3, 169, 244), (0, 188, 212),
-          (0, 150, 136), (76, 175, 80), (139, 195, 74), (205, 220, 57),
-          (255, 235, 59), (255, 193, 7), (255, 152, 0), (255, 87, 34),
-          (121, 85, 72), (158, 158, 158), (96, 125, 139))
+COLORS = ((244, 67, 54), (233, 30, 99), (156, 39, 176), (103, 58, 183), (63, 81, 181), (33, 150, 243),
+          (3, 169, 244), (0, 188, 212), (0, 150, 136), (76, 175, 80), (139, 195, 74), (205, 220, 57),
+          (255, 235, 59), (255, 193, 7), (255, 152, 0), (255, 87, 34), (121, 85, 72), (158, 158, 158), (96, 125, 139))
 
 # These are in BGR and are for ImageNet
 MEANS = (103.94, 116.78, 123.68)
 STD = (57.38, 57.12, 58.40)
 
-COCO_CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
-                'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
-                'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog',
-                'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe',
-                'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
-                'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat',
-                'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
-                'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
-                'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot',
-                'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch',
-                'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop',
-                'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven',
-                'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
-                'scissors', 'teddy bear', 'hair drier', 'toothbrush')
+COCO_CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat',
+                'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog',
+                'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag',
+                'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat',
+                'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup',
+                'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot',
+                'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table',
+                'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster',
+                'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush')
 
-PASCAL_CLASSES = ("aeroplane", "bicycle", "bird", "boat", "bottle",
-                  "bus", "car", "cat", "chair", "cow", "diningtable",
-                  "dog", "horse", "motorbike", "person", "pottedplant",
-                  "sheep", "sofa", "train", "tvmonitor")
+PASCAL_CLASSES = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable',
+                  'dog', 'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor')
 
 CUSTOM_CLASSES = ('plane', 'cat', 'dog', 'person')  # This is just an example, modify it as you like.
 
@@ -63,18 +54,11 @@ CUSTOM_LABEL_MAP = {1: 1, 2: 2, 3: 3, 4: 4}  # This is just an example, modify i
 
 
 class Config(object):
-    """
-    After implement this class, you can call 'cfg.x' instead of 'cfg['x']' to get a certain parameter.
-    """
-
     def __init__(self, config_dict):
         for key, val in config_dict.items():
             self.__setattr__(key, val)
 
     def copy(self, new_config_dict={}):
-        """
-        Copies this config into a new config object, making the changes given by new_config_dict.
-        """
         ret = Config(vars(self))
         for key, val in new_config_dict.items():
             ret.__setattr__(key, val)
@@ -82,9 +66,6 @@ class Config(object):
         return ret
 
     def replace(self, new_config_dict):
-        """
-        Copies new_config_dict into this config object. Note: new_config_dict can also be a config object.
-        """
         if isinstance(new_config_dict, Config):
             new_config_dict = vars(new_config_dict)
 
@@ -97,8 +78,8 @@ class Config(object):
 
 # ----------------------- DATASETS ----------------------- #
 coco_dataset = Config({'name': 'COCO 2017',
-                       'train_images': '/home/feiyu/Data/coco2017/train2017/',
-                       'train_info': '/home/feiyu/Data/coco2017/annotations/instances_train2017.json',
+                       'train_images': '/home/feiyu/Data/coco2017/val2017/',
+                       'train_info': '/home/feiyu/Data/coco2017/annotations/instances_val2017.json',
                        'valid_images': '/home/feiyu/Data/coco2017/val2017/',
                        'valid_info': '/home/feiyu/Data/coco2017/annotations/instances_val2017.json',
                        'class_names': COCO_CLASSES})
@@ -155,11 +136,10 @@ res101_coco_config = Config({
     'conf_alpha': 1,
     'bbox_alpha': 1.5,
     'mask_alpha': 6.125,
+    'semantic_alpha': 1,
     # Learning rate
     'lr_steps': (280000, 600000, 700000, 750000),
     'lr': 1e-3,
-    'momentum': 0.9,
-    'decay': 5e-4,
     # warm up setting
     'warmup_init': 1e-4,
     'warmup_until': 500,
@@ -171,7 +151,6 @@ res101_coco_config = Config({
     'use_square_anchors': True,  # This is for backward compatability with a bug.
     # Whether to train the semantic segmentations branch, this branch is only implemented during training.
     'train_semantic': True,
-    'semantic_alpha': 1,
     # postprocess hyperparameters
     'conf_thre': 0.05,
     'nms_thre': 0.5,

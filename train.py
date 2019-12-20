@@ -12,7 +12,6 @@ import glob
 
 from utils.augmentations import SSDAugmentation, BaseTransform
 from utils.functions import MovingAverage
-from utils import timer
 from modules.build_yolact import Yolact
 from modules.multi_loss import Multi_Loss
 from data.config import cfg, update_config
@@ -91,8 +90,6 @@ print('\n' + '-' * 30 + 'Configs' + '-' * 30)
 for k, v in vars(cfg).items():
     print(f'{k}: {v}')
 
-# Don't use the timer during training, there's a race condition with multiple GPUs.
-timer.disable_all()
 
 cuda = torch.cuda.is_available()
 if cuda:
@@ -116,7 +113,7 @@ else:
     net.init_weights(backbone_path='weights/' + cfg.backbone.path)
     print('\nTraining from begining, weights initialized.\n')
 
-optimizer = optim.SGD(net.parameters(), lr=cfg.lr, momentum=cfg.momentum, weight_decay=cfg.decay)
+optimizer = optim.SGD(net.parameters(), lr=cfg.lr, momentum=0.9, weight_decay=5e-4)
 criterion = Multi_Loss(num_classes=cfg.num_classes, pos_thre=cfg.pos_iou_thre, neg_thre=cfg.neg_iou_thre, np_ratio=3)
 
 if cuda:
@@ -127,7 +124,7 @@ if cuda:
 dataset = COCODetection(image_path=cfg.dataset.train_images, info_file=cfg.dataset.train_info,
                         augmentation=SSDAugmentation())
 
-data_loader = data.DataLoader(dataset, cfg.batch_size, num_workers=8, shuffle=True,
+data_loader = data.DataLoader(dataset, cfg.batch_size, num_workers=0, shuffle=True,
                               collate_fn=detection_collate, pin_memory=True)
 
 step_index = 0
