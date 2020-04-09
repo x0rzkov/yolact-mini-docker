@@ -5,8 +5,8 @@ services:
   sidekiq: &yolact_base
     build:
       context: .
-      dockerfile: Dockerfile
-    image: yolact-minimal:cpu-latest
+      dockerfile: Dockerfile.gpu
+    image: yolact-minimal:gpu-latest
     working_dir: /yolact
     volumes:
     - ./server:/yolact/server
