@@ -4,6 +4,8 @@ The original project is [here](https://github.com/dbolya/yolact).
 
 This implementation simplified the original code, preserved the main function and made the network easy to understand.   
 
+![Screenshot](docs/sample.jpg)
+
 Following instruction is based on resnet-101.  
 ### The network structure.  
 ![Example 0](data/network.png)
