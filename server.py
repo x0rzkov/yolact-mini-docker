@@ -92,7 +92,9 @@ def process():
                 file.save(destFile)
                 app.logger.warning('filename=(%s)', filename)
         else:
-            url = request.json["url"]
+            app.logger.warning("Request dictionary data: {}".format(request.data))
+            app.logger.warning("Request dictionary form: {}".format(request.form))
+            url = request.form["url"]
             print("url:", url)
             # download file
             destFile = download_file(url)
