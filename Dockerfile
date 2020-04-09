@@ -115,4 +115,6 @@ RUN APT_INSTALL="apt-get install -y --no-install-recommends" && \
 WORKDIR /yolact
 COPY . /yolact
 
+RUN pip install requests werkzeug flask Image
+
 CMD ["/bin/bash"]

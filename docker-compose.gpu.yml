@@ -17,7 +17,7 @@ services:
   yolact:
     <<: *yolact_base
     ports:
-    - "9003:9003"
+    - "8000:8000"
     restart: unless-stopped
     command: ["/bin/bash"]
     networks:
