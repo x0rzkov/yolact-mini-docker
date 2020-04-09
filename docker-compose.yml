@@ -21,7 +21,7 @@ services:
     ports:
     - "8000:8000"
     restart: unless-stopped
-    command: ["python3", "./app.py", "--trained_model=res101_coco_800000.pth"]
+    command: ["python3", "./server.py", "--trained_model=res101_coco_800000.pth"]
     networks:
     - internal
     - web # for tests purpose    
