@@ -1,0 +1,41 @@
+---
+version: '3.7'
+services:
+
+  sidekiq: &yolact_base
+    build:
+      context: .
+    image: yolact-minimal:latest
+    working_dir: /darknet
+    volumes:
+    - ./server:/yolact/server
+    - yolact-models:/yolact/weights
+    - yolact-results:/yolact/results
+    command: ./scripts/download_data.sh
+
+  yolact:
+    <<: *yolact_base
+    ports:
+    - "9003:9003"
+    restart: unless-stopped
+    command: ["/bin/bash"]
+    networks:
+    - internal
+    - web # for tests purpose    
+
+networks:
+  internal:
+  web:
+    external: true
+
+volumes:
+  yolact-models:
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/weights
+  yolact-results:
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/results
