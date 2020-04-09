@@ -134,7 +134,7 @@ def process():
         # print(f'\r{i + 1}/{num}', end='')
 
         try:
-            im = image.open(f'results/images/{img_name}')
+            im = Image.open(f'results/images/{img_name}')
             # im = Image.open(destFile)
             io = BytesIO()
             im.save(io, format='JPEG')

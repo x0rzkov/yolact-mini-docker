@@ -9,7 +9,7 @@ services:
     image: yolact-minimal:cpu-latest
     working_dir: /yolact
     volumes:
-    - ./app.py:/yolact/app.py
+    - ./server.py:/yolact/server.py
     - ./server:/yolact/server
     - ./scripts:/yolact/scripts
     - yolact-models:/yolact/weights

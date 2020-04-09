@@ -254,7 +254,7 @@ def draw_img(results, img, args, class_color=False, fps=None):
 
     # Masks are drawn on the GPU, so don't copy
     masks = results[3][:args.visual_top_k]
-    class_ids, classes, boxes = [x[:args.visual_top_k].cpu().numpy() for x in results[:3]]
+    class_ids, classes, boxes = [x[:args.visual_top_k].cpu().detach().numpy() for x in results[:3]]
 
     num_considered = min(args.visual_top_k, class_ids.shape[0])
     for i in range(num_considered):
